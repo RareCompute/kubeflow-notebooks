@@ -16,12 +16,19 @@ ARG PIP_VERSION=24.0
 ARG PYTHON_VERSION=3.11.9
 
 ARG PYTORCH_VERSION=
-ARG TORCHAUDIO_VERSION=
-ARG TORCHVISION_VERSION=
+ARG TORCHAUDIO_VERSION=2.3.1+cu118
+ARG TORCHVISION_VERSION=0.18.1+cu118
+
+# nvidia container toolkit
+# https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+ENV NVIDIA_REQUIRE_CUDA "cuda>=12.1"
 
 # setup environment for conda
 ENV CONDA_DIR /opt/conda
 ENV PATH "${CONDA_DIR}/bin:${PATH}"
+
 RUN mkdir -pv ${CONDA_DIR} \
  && chmod 2775 ${CONDA_DIR} \
  && echo ". /opt/conda/etc/profile.d/conda.sh" >> ${HOME}/.bashrc \
@@ -86,10 +93,12 @@ RUN python3 -m pip install --quiet --no-cache-dir --index-url https://download.p
 # install - biopython
 RUN python3 -m pip install biopython --quiet --no-cache-dir
 
-# install - codeserver extensions
+# install
 RUN code-server --install-extension "ms-python.python@${CODESERVER_PYTHON_VERSION}" --force \
+ && code-server --install-extension "dracula-theme.theme-dracula" --force \
+ && code-server --install-extension "PKief.material-icon-theme" --force \
  && code-server --list-extensions --show-versions
-
+ 
 # s6 - 01-copy-tmp-home
 # NOTE: the contents of $HOME_TMP are copied to $HOME at runtime
 #       this is a workaround because a PVC will be mounted at $HOME
